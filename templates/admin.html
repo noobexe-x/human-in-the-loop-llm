@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+    <section class="panel page-header">
+        <div class="panel-title">
+            <span>管理コンソール</span>
+            <span class="user-badge">{{ username }} / 管理者</span>
+        </div>
+        <p class="terminal-line">ユーザー作成 -&gt; 検索 -&gt; 利用権限付与 -&gt; 判定記録確認</p>
+    </section>
+
+    <section class="panel composer-card">
+        <div class="section-heading">
+            <h2>ユーザー作成</h2>
+        </div>
+        <form method="POST" action="{{ url_for('admin_create_user') }}" class="stack-form">
+            <input type="hidden" name="q" value="{{ search_query }}">
+            <label>
+                ユーザー名
+                <input type="text" name="username" placeholder="例: 山田太郎" required>
+            </label>
+            <label>
+                パスワード
+                <input type="password" name="password" placeholder="初期パスワード" required>
+            </label>
+            <label class="access-toggle">
+                <input type="checkbox" name="can_access" value="1">
+                <span>作成時にシステム利用権限を付与する</span>
+            </label>
+            <button type="submit">ユーザーを作成</button>
+        </form>
+    </section>
+
+    <section class="panel composer-card">
+        <div class="section-heading">
+            <h2>ユーザー検索</h2>
+        </div>
+        <form method="GET" action="{{ url_for('admin_panel') }}" class="stack-form composer-form">
+            <label>
+                ユーザーIDまたはユーザー名
+                <input name="q" value="{{ search_query }}">
+            </label>
+            <button type="submit">検索</button>
+        </form>
+    </section>
+
+    <section class="panel history-card">
+        <div class="section-heading">
+            <h2>検索結果</h2>
+        </div>
+        <div class="history-list">
+            {% for user in users %}
+                <article class="message user-row">
+                    <a class="user-row-link" href="{{ url_for('admin_user_detail', username=user.username) }}">
+                        <div class="message-meta">ユーザー名</div>
+                        <div class="message-body">{{ user.username }}</div>
+                        <div class="message-choice">フィードバック記録を見る</div>
+                    </a>
+                    <form
+                        method="POST"
+                        action="{{ url_for('admin_set_user_access', user_id=user.id) }}"
+                        class="access-toggle-form"
+                    >
+                        <input type="hidden" name="q" value="{{ search_query }}">
+                        <label class="access-toggle">
+                            <input
+                                type="checkbox"
+                                name="can_access"
+                                value="1"
+                                {% if user.can_access %}checked{% endif %}
+                                onchange="this.form.submit()"
+                            >
+                            <span>システム利用権限</span>
+                        </label>
+                    </form>
+                </article>
+            {% else %}
+                <p class="empty-state">該当する一般ユーザーはいません。</p>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}

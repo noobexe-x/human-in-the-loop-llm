@@ -1,0 +1,69 @@
+---
+description: Flask AIチャットダッシュボードの開発規約
+alwaysApply: true
+---
+
+# Flask AIチャットダッシュボード 開発規約
+
+## 基本方針
+
+このプロジェクトは、Flaskで作成された **ToB向け LLMO 概念デモ** である。
+管理者によるユーザー作成・利用権限付与 → ログイン → AI候補生成 → **4段階判定**（採用/修正して採用/不採用/要確認）→ コンテンツライブラリ更新のワークフローを提供する。
+開発時の説明、コードコメント、Markdown、コミットメッセージ、PR説明、Git操作に関する説明は、原則として日本語で記述する。
+画面表示、テストデータ、ダミーデータ、サンプル入力、ログ確認用の文言も、特別な理由がない限り日本語で統一する。
+
+## 技術スタック
+
+- Python
+- Flask
+- Flask-SQLAlchemy
+- SQLite
+- OpenAI SDK互換API（DeepSeek）
+- python-dotenv
+- HTMLテンプレート
+- CSS
+- Docker / docker compose
+
+## ファイル責務
+
+- `app.py` はFlaskアプリの作成、設定読み込み、DB初期化、共通ログ設定、デモ用スキーマ移行、初期管理者作成、ルート登録を担当する。
+- `config.py` は環境変数とアプリ設定（`SECRET_KEY`、DeepSeek API、`DEMO_MAX_TOKENS` など）を集約する。
+- `models.py` はDBモデルだけを定義する（`User`、`AiGeneration`、`UserChoice`）。`UserChoice` は4段階判定イベントを保存する。
+- `routes.py` は各Controllerのルート登録入口として保ち、画面別の処理は `application/controllers/` 配下へ分ける。
+- `application/controllers/` は認証、管理画面、ダッシュボードなどのURLルート、セッション処理、フォーム処理、権限チェック、テンプレート描画を担当する。4段階判定は一般ユーザーの `dashboard` のみで行う。ビジネスロジックはサービス層へ委譲する。
+- `application/services/ai_service.py` はAI API呼び出し、候補抽出向けPrompt整形、コンテンツライブラリ文脈の差し込み、AI返答の候補パースを担当する。
+- `application/constants/decision_constants.py` は4段階判定値と `status`（published/rejected/pending）の対応を定義する。
+- `application/services/decision_service.py` は判定フォームの検証と `UserChoice` レコード組み立てを担当する。
+- `application/services/content_library_service.py` は `status` による分類読取と Prompt 用コンテキスト生成を担当する。
+- `application/services/admin_service.py` は管理画面向けのユーザー検索・作成・利用権限更新、履歴・判定記録取得を担当する。管理者は判定の閲覧のみ行い、4段階判定の操作は行わない。
+- `templates/` は画面HTMLを管理する（`base.html`、`home.html`、`login.html`、`dashboard.html`、`admin.html`、`admin_user.html`）。
+- `static/style.css` は画面スタイルを管理する。
+- `dbtesttools/` はテスト・開発用の手動ツール（データ削除、シード投入、フロント経由テスト）を管理する（本番アプリ起動には含めない）。
+
+## コード規約
+
+- 既存の構成を優先し、大きな設計変更は必要な場合だけ行う。
+- 複雑な処理には短い日本語コメントを追加する。
+- 自明な処理には不要なコメントを追加しない。
+- 技術用語を含む日本語コメントでは、必要に応じて外来語の横に英語原語を括弧で補足する。例：セッション（session）、ロールバック（rollback）、キャッシュ（cache）。
+- DB保存処理では例外時に `rollback()` し、`error.log` へログを残す。
+- `.env`、APIキー、秘密情報、`instance/chat.db`、`venv/` はコミットしない。
+- デモ用途の簡易実装と本番向け改善点は、コメントまたはMarkdownで明確にする。
+
+## テストデータ規約
+
+- テスト用データ、ダミーデータ、シードデータ、画面確認用サンプルは日本語で作成する。
+- ユーザー名、質問文、AI候補、履歴表示用テキストなど、ユーザーが読む可能性のある値は日本語にする。
+
+## Markdown規約
+
+- `README.md`、開発用Markdown、仕様メモは日本語で記述する。
+- セットアップ、起動方法、環境変数、Docker手順は実行可能なコマンド付きで書く。
+- 仕様変更を行った場合は、関連するMarkdownも更新する。
+
+## Git規約
+
+- 変更前に差分を確認する。
+- コミット対象に秘密情報や生成物が含まれていないことを確認する。
+- Git操作は自動実行しない。`git status`、`git diff`、`git add`、`git commit`、`git push` など、すべてのGitコマンドは実行前にchatへ全文を表示する。
+- ユーザーが表示されたGitコマンドを確認し、明示的に承認した場合のみ実行する。

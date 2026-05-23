@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+    <section class="panel auth-card">
+        <div class="panel-title">
+            <span>ログイン</span>
+        </div>
+        <p class="terminal-line">アカウント情報を入力してください</p>
+        <form method="POST" class="stack-form">
+            <label>
+                ユーザー名
+                <input type="text" name="username" placeholder="ユーザー名" required>
+            </label>
+            <label>
+                パスワード
+                <input type="password" name="password" placeholder="パスワード" required>
+            </label>
+            <button type="submit">ログイン</button>
+        </form>
+        <p class="muted">アカウントは管理者から付与されます。</p>
+    </section>
+{% endblock %}

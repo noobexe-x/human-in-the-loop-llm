@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block content %}
+    <section class="panel page-header">
+        <div class="panel-title">
+            <span>LLMOフィードバック観察</span>
+            <span class="user-badge">{{ username }} / 管理者</span>
+        </div>
+        <p class="terminal-line">
+            <a href="{{ url_for('admin_panel') }}">管理コンソール</a>
+            -&gt; {{ target_user.username }}
+        </p>
+    </section>
+
+    <section class="panel feedback-hero">
+        <div class="section-heading">
+            <h2>人工フィードバック回路</h2>
+        </div>
+        <div class="feedback-summary-card">
+            <div>
+                <div class="message-meta">対象ユーザー</div>
+                <div class="feedback-user-name">{{ target_user.username }}</div>
+                <p class="feedback-summary-text">
+                    管理者はこのユーザーの入力、4段階判定、採用済みコンテンツ、不採用理由を閲覧します。
+                    採用内容と不採用理由は、次回生成時の Prompt 文脈へ反映されます。
+                </p>
+            </div>
+        </div>
+
+        <div class="metric-grid">
+            <article class="metric-card">
+                <div class="metric-label">入力数</div>
+                <div class="metric-value">{{ input_history|length }}</div>
+            </article>
+            <article class="metric-card">
+                <div class="metric-label">判定数</div>
+                <div class="metric-value">{{ choice_history|length }}</div>
+            </article>
+            {% for tier_value, tier_label in decision_tier_options %}
+                <article class="metric-card">
+                    <div class="metric-label">{{ tier_label }}</div>
+                    <div class="metric-value">{{ decision_tier_counts.get(tier_value, 0) }}</div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="panel history-card">
+        <div class="section-heading">
+            <h2>要確認キュー（閲覧のみ）</h2>
+        </div>
+        {% if pending_choices %}
+            <div class="history-list">
+                {% for item in pending_choices %}
+                    <article class="message">
+                        <div class="message-meta">{{ item.created_at }}</div>
+                        <div class="message-body"><b>候補:</b> {{ item.selected_text }}</div>
+                        {% if item.review_note %}
+                            <div class="message-choice"><b>メモ:</b> {{ item.review_note }}</div>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">要確認の判定はありません。</p>
+        {% endif %}
+    </section>
+
+    <section class="panel history-card">
+        <div class="section-heading">
+            <h2>採用コンテンツ（Promptへ反映）</h2>
+        </div>
+        {% if published_choices %}
+            <div class="history-list">
+                {% for item in published_choices %}
+                    <article class="message">
+                        <div class="message-meta">{{ item.created_at }} / {{ item.tier_label() }}</div>
+                        <div class="message-body">{{ item.canonical_text() }}</div>
+                        {% if item.edited_text %}
+                            <div class="message-choice"><b>元候補:</b> {{ item.selected_text }}</div>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">Promptへ反映する採用済みコンテンツはまだありません。</p>
+        {% endif %}
+    </section>
+
+    <section class="panel history-card">
+        <div class="section-heading">
+            <h2>不採用理由（Prompt調整）</h2>
+        </div>
+        {% if rejected_choices %}
+            <div class="history-list">
+                {% for item in rejected_choices %}
+                    <article class="message">
+                        <div class="message-meta">{{ item.created_at }}</div>
+                        <div class="message-body"><b>候補:</b> {{ item.selected_text }}</div>
+                        <div class="message-choice"><b>理由:</b> {{ item.reject_reason }}</div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">Prompt調整に使う不採用理由はまだありません。</p>
+        {% endif %}
+    </section>
+
+    <section class="panel history-card">
+        <div class="section-heading">
+            <h2>判定履歴（閲覧のみ）</h2>
+        </div>
+        {% if choice_history %}
+            <div class="history-list">
+                {% for item in choice_history %}
+                    <article class="message">
+                        <div class="message-meta">{{ item.tier_label() }}</div>
+                        <div class="message-body"><b>入力:</b> {{ item.question_text }}</div>
+                        <div class="message-choice"><b>候補:</b> {{ item.selected_text }}</div>
+                        {% if item.edited_text %}
+                            <div class="message-choice"><b>修正:</b> {{ item.edited_text }}</div>
+                        {% endif %}
+                        {% if item.reject_reason %}
+                            <div class="message-choice"><b>不採用理由:</b> {{ item.reject_reason }}</div>
+                        {% endif %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">判定履歴はまだありません。</p>
+        {% endif %}
+    </section>
+{% endblock %}

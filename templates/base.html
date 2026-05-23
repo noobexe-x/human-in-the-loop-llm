@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIチャットデモ</title>
+    <link rel="stylesheet" href="{{ url_for('style_css') }}?v=202605231318">
+</head>
+<body>
+    <header class="top-nav">
+        <a class="brand" href="{{ url_for('home') }}">AIチャットデモ</a>
+        <nav class="nav-links" aria-label="メインナビゲーション">
+            {% if 'user_id' in session %}
+                {% if session.get('is_admin') %}
+                    <a href="{{ url_for('admin_panel') }}">管理</a>
+                {% else %}
+                    <a href="{{ url_for('dashboard') }}">ダッシュボード</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}">ログアウト</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">ログイン</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="app-shell">
+        <div class="scanline"></div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <section class="flash-list" aria-live="polite">
+                    {% for message in messages %}
+                        <p class="flash">{{ message }}</p>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

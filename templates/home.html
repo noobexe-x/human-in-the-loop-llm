@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+    <section class="panel hero">
+        <div class="panel-title">
+            <span>候補選択デモ</span>
+        </div>
+        <p class="terminal-line">管理者によるアカウント作成 -&gt; 利用権限付与 -&gt; ユーザー操作</p>
+        <h1>AIチャットダッシュボード</h1>
+        <p class="lead">管理者が許可したユーザーのみ、AI候補生成と選択履歴を利用できます。</p>
+        <div class="actions">
+            <a class="button" href="{{ url_for('login') }}">ログイン</a>
+        </div>
+    </section>
+{% endblock %}

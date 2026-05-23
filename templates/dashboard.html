@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block content %}
+    <section class="panel page-header">
+        <div class="panel-title">
+            <span>候補判定デモ</span>
+            <span class="user-badge">{{ username }}</span>
+        </div>
+        <p class="terminal-line">入力 -&gt; AI候補 -&gt; 4段階判定 -&gt; コンテンツライブラリ -&gt; 次回生成</p>
+    </section>
+
+    <section class="panel composer-card">
+        <div class="section-heading">
+            <h2>入力内容</h2>
+        </div>
+        <form method="POST" class="stack-form composer-form">
+            <input type="hidden" name="action" value="chat">
+            <textarea name="message" rows="4" placeholder="例: タイトル候補を抽出してください" required></textarea>
+            <button type="submit">候補を生成</button>
+        </form>
+    </section>
+
+    {% if pending_generation_id %}
+    <section class="panel candidate-card">
+        <div class="section-heading">
+            <h2>候補を判定</h2>
+        </div>
+        <p class="prompt-preview"><b>入力:</b> {{ pending_prompt }}</p>
+        {% if pending_initial_count %}
+            <p class="review-progress">
+                進捗: {{ pending_judged_count }} / {{ pending_initial_count }} 件判定済み
+            </p>
+        {% endif %}
+
+        {% if pending_candidates %}
+            <div class="candidate-rows">
+                {% for candidate in pending_candidates %}
+                    <form method="POST" class="candidate-row-form">
+                        <input type="hidden" name="action" value="decide">
+                        <input type="hidden" name="generation_id" value="{{ pending_generation_id }}">
+                        <input type="hidden" name="selected_text" value="{{ candidate }}">
+
+                        <div class="candidate-row-header">
+                            <span class="candidate-number">0{{ loop.index }}</span>
+                            <span class="candidate-text">{{ candidate }}</span>
+                        </div>
+
+                        <div class="field-label">判定</div>
+                        <div class="decision-tier-group">
+                            {% for tier_value, tier_label in decision_tier_options %}
+                                <label class="decision-tier">
+                                    <input type="radio" name="decision_tier" value="{{ tier_value }}" required>
+                                    <span class="decision-tier-label">{{ tier_label }}</span>
+                                    <span class="decision-tier-desc">{{ decision_tier_descriptions[tier_value] }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+
+                        <div class="decision-field candidate-edited-field" hidden>
+                            <label class="field-label">修正後テキスト</label>
+                            <textarea name="edited_text" rows="3" placeholder="修正して採用の場合に入力してください"></textarea>
+                        </div>
+
+                        <div class="decision-field candidate-reject-field" hidden>
+                            <label class="field-label">不採用理由</label>
+                            <textarea name="reject_reason" rows="2" placeholder="例: 出典が不明 / 表現が抽象的"></textarea>
+                        </div>
+
+                        <div class="decision-field candidate-review-field" hidden>
+                            <label class="field-label">要確認メモ（任意）</label>
+                            <textarea name="review_note" rows="2" placeholder="例: 事実確認が必要"></textarea>
+                        </div>
+
+                        <button type="submit" class="candidate-save-button">この候補を保存</button>
+                    </form>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="empty-state">未判定の候補はありません。下のボタンでこのラウンドを終了できます。</p>
+        {% endif %}
+
+        <form method="POST" class="finish-round-form">
+            <input type="hidden" name="action" value="finish_review">
+            <input type="hidden" name="generation_id" value="{{ pending_generation_id }}">
+            <button type="submit" class="finish-round-button">このラウンドを終了</button>
+        </form>
+    </section>
+    {% endif %}
+
+    {% if pending_review %}
+    <section class="panel history-card">
+        <div class="section-heading">
+            <h2>要確認キュー</h2>
+        </div>
+        <div class="history-list">
+            {% for item in pending_review %}
+                <article class="message">
+                    <div class="message-meta">{{ item.created_at }} / 要確認</div>
+                    <div class="message-body"><b>候補:</b> {{ item.selected_text }}</div>
+                    {% if item.review_note %}
+                        <div class="message-choice"><b>メモ:</b> {{ item.review_note }}</div>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="history-grid">
+        <section class="panel history-card">
+            <div class="section-heading">
+                <h2>入力履歴</h2>
+            </div>
+            <div class="history-list">
+                {% for item in input_history %}
+                    <article class="message">
+                        <div class="message-meta">{{ username }}</div>
+                        <div class="message-body">{{ item.input_text }}</div>
+                    </article>
+                {% else %}
+                    <p class="empty-state">入力履歴はまだありません。</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="panel history-card">
+            <div class="section-heading">
+                <h2>判定履歴</h2>
+            </div>
+            <div class="history-list">
+                {% for item in choice_history %}
+                    <article class="message">
+                        <div class="message-meta">{{ item.tier_label() }}</div>
+                        <div class="message-body"><b>入力:</b> {{ item.question_text }}</div>
+                        <div class="message-choice"><b>候補:</b> {{ item.selected_text }}</div>
+                        {% if item.edited_text %}
+                            <div class="message-choice"><b>修正:</b> {{ item.edited_text }}</div>
+                        {% endif %}
+                        {% if item.reject_reason %}
+                            <div class="message-choice"><b>不採用理由:</b> {{ item.reject_reason }}</div>
+                        {% endif %}
+                        {% if item.review_note %}
+                            <div class="message-choice"><b>メモ:</b> {{ item.review_note }}</div>
+                        {% endif %}
+                    </article>
+                {% else %}
+                    <p class="empty-state">判定履歴はまだありません。</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <script>
+        (function () {
+            function initCandidateRowForm(form) {
+                const editedField = form.querySelector(".candidate-edited-field");
+                const rejectField = form.querySelector(".candidate-reject-field");
+                const reviewField = form.querySelector(".candidate-review-field");
+                const editedTextarea = form.querySelector('textarea[name="edited_text"]');
+                const rejectTextarea = form.querySelector('textarea[name="reject_reason"]');
+                const tierInputs = form.querySelectorAll('input[name="decision_tier"]');
+                const candidateText = form.querySelector('input[name="selected_text"]')?.value || "";
+
+                function updateDecisionFields() {
+                    const tier = form.querySelector('input[name="decision_tier"]:checked')?.value;
+                    editedField.hidden = tier !== "revise_adopt";
+                    rejectField.hidden = tier !== "reject";
+                    reviewField.hidden = tier !== "needs_review";
+
+                    editedTextarea.required = tier === "revise_adopt";
+                    rejectTextarea.required = tier === "reject";
+
+                    if (tier === "revise_adopt" && !editedTextarea.value) {
+                        editedTextarea.value = candidateText;
+                    }
+                }
+
+                tierInputs.forEach((input) => input.addEventListener("change", updateDecisionFields));
+                updateDecisionFields();
+            }
+
+            document.querySelectorAll(".candidate-row-form").forEach(initCandidateRowForm);
+        })();
+    </script>
+{% endblock %}
