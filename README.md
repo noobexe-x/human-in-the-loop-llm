@@ -2,6 +2,18 @@
 
 ToB向け LLMO 概念デモです。管理者がユーザーを作成して利用権限を付与し、許可された一般ユーザーが AI 候補を生成します。生成された候補は **4段階判定**（採用 / 修正して採用 / 不採用 / 要確認）で整理し、採用済みコンテンツと不採用理由を次回生成時の Prompt に反映します。
 
+## ドキュメント（`docs/`）
+
+アプリの起動には不要です。提出・デモ説明・今後の拡張メモをまとめています。
+
+| ファイル | 内容 |
+|---|---|
+| [docs/課題プロセスと説明.md](docs/課題プロセスと説明.md) | 課題 2 の企画、実装範囲、偏題と修正、技術・限界（**提出時の正**） |
+| [docs/後続の追加方向.md](docs/後続の追加方向.md) | 未実装の拡張（長文、基盤・分层など）のメモ |
+| `docs/llmo-hitl-closed-loop-flow.png` | 参考図（課題説明から参照） |
+
+手動テスト手順: [dbtesttools/README.md](dbtesttools/README.md)
+
 ## ワークフロー
 
 ```text
@@ -73,7 +85,8 @@ python dbtesttools/frontend_flow_test.py
 | `application/constants/` | 4段階判定と `status` の定義 |
 | `templates/` | HTML |
 | `static/style.css` | スタイル |
-| `dbtesttools/` | 手動テスト用ツール（削除・シード・フロント経由テスト） |
+| `dbtesttools/` | 手動テスト用ツール（[README](dbtesttools/README.md) 参照） |
+| `docs/` | 企画・提出説明、後続拡張メモ、参考図（上表） |
 
 ## 注意
 
